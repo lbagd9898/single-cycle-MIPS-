@@ -31,13 +31,15 @@ class RF
 
     void ReadWrite(bitset<5> RdReg1, bitset<5> RdReg2, bitset<5> WrtReg, bitset<32> WrtData, bitset<1> WrtEnable)
     {   
+
       /**
        * @brief Reads or writes data from/to the Register.
        *
        * This function is used to read or write data from/to the register, depending on the value of WrtEnable.
        * Put the read results to the ReadData1 and ReadData2.
        */
-      // TODO: implement!               
+      // TODO: implement!
+
     }
 
     void OutputRF()
@@ -68,6 +70,7 @@ class ALU
     bitset<32> ALUresult;
     bitset<32> ALUOperation (bitset<3> ALUOP, bitset<32> oprand1, bitset<32> oprand2)
     {   
+      //reset before new operators
       ALUresult.reset();
       if (ALUOP == 1) {
         unsigned long o1 = oprand1.to_ulong();
@@ -126,6 +129,29 @@ class INSMem
        * Read the byte at the ReadAddress and the following three byte,
        * and return the read result. 
        */
+      //convert to integer
+      unsigned long address = ReadAddress.to_ulong();
+      //find vector indexes of 4 bytes
+      unsigned long index1 = address * 4;
+      unsigned long index2 = (address + 1) * 4 - 1;
+      //slice from index1 all the way through index2
+      vector<bitset<8>> InstructionSlice(IMem.begin() + index1, IMem.begin() + index2 + 1);
+
+      //print statements for testing
+      cout << index1 << "\n";
+      cout << index2 << "\n";
+      for (const auto& byte : InstructionSlice) {
+      std::cout << byte << "\n";  // Outputs: 00000000, 10101010, etc.
+      }
+
+      unsigned long IntInstruction = (InstructionSlice[0].to_ulong() << 24) | (InstructionSlice[1].to_ulong() << 16) | (InstructionSlice[2].to_ulong() << 8) | (InstructionSlice[3].to_ulong());
+
+      bitset<32>Instruction(IntInstruction);
+
+      //printing to test
+      cout << Instruction << "\n"; 
+
+
       return Instruction;     
     }     
 
@@ -205,6 +231,12 @@ int main()
 
   while (1)  // TODO: implement!
   {
+    bitset<32> a(0);
+    bitset<32> b(1);
+    myInsMem.ReadMemory(a);
+    myInsMem.ReadMemory(b);
+
+    break;
     // Fetch: fetch an instruction from myInsMem.
 
     // If current instruction is "11111111111111111111111111111111", then break; (exit the while loop)
@@ -221,11 +253,6 @@ int main()
 
 
     /**** You don't need to modify the following lines. ****/
-    bitset<3> opCode(1);
-    bitset<32> num1(10);
-    bitset<32> num2(20);
-
-    bitset<32> result = myALU.ALUOperation(opCode, num1, num2);
 
     myRF.OutputRF(); // dump RF;    
   }
