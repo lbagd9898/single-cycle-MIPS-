@@ -192,21 +192,23 @@ class DataMem
     {  
       //checks if it is mod 4 by checking if last two values are 0s
       if ( Address[0] || Address[1]) {
+        cout << "invalid address" << "\n";
         return 0;
       }  
+      unsigned long add1 = Address.to_ulong();
+      unsigned long add2 = add1 + 3;
       //if readmem is true
       if (readmem[0]) {
-        unsigned long add1 = Address.to_ulong();
-        unsigned long add2 = add1 + 3;
         vector<bitset<8>> addSlice(DMem.begin() + add1, DMem.begin() + add2 + 1);
 
         //print for verification
         cout << add1 << "\n";
         cout << add2 << "\n";
         for (const auto& byte : addSlice) {
-        std::cout << byte << "\n";  // Outputs: 00000000, 10101010, etc.
-        }
+        std::cout << byte << "\n"; 
 
+         // Outputs: 00000000, 10101010, etc.
+        }
 
         unsigned long IntDataMem = (addSlice[0].to_ulong() << 24) | (addSlice[1].to_ulong() << 16) | (addSlice[2].to_ulong() << 8) | (addSlice[3].to_ulong());
 
@@ -216,6 +218,26 @@ class DataMem
         cout << readdata << "\n";
 
       }
+      if (writemem[0]) {
+        int shift = 24;
+        
+
+        for (int i = add1; i <= add2; i++) {
+            // Explicitly convert shifted bitset to 8 bits
+            DMem[i] = std::bitset<8>((WriteData >> shift).to_ulong());
+            shift -= 8;
+        }
+
+        // --- PRINT DMEM TO VERIFY UPDATES ---
+        std::cout << "--- Updated DMem ---" << std::endl;
+        for (size_t i = 0; i < 16; i++) {
+            std::cout << "DMem[" << i << "]: " << DMem[i] << std::endl;
+        }
+        std::cout << "--------------------" << std::endl;
+
+
+        return 1;
+    }
       /**
        * @brief Reads/writes data from/to the Data Memory.
        *
@@ -263,10 +285,18 @@ int main()
 
   while (1)  // TODO: implement!
   {
-    bitset<32> a(0);
-    bitset<32> b(1);
 
-    myDataMem.MemoryAccess(b, 0, 1, 0);
+    bitset<32> Address(4);
+    bitset<32> writeData(2870129782UL);
+    bitset<1> writeMem(1);
+    bitset<1> readMem(0);
+    
+    cout << "--- Before MemoryAccess ---" << endl;
+    cout << "writeData (Binary) : " << writeData << endl;
+    cout << "writeData (Decimal): " << writeData.to_ulong() << endl;
+    cout << "---------------------------" << endl;
+
+    myDataMem.MemoryAccess(Address, writeData, readMem, writeMem);
 
 
     break;
