@@ -157,8 +157,6 @@ class INSMem
 
       //printing to test
       cout << Instruction << "\n"; 
-
-
       return Instruction;     
     }     
 
@@ -191,7 +189,33 @@ class DataMem
 
     }  
     bitset<32> MemoryAccess (bitset<32> Address, bitset<32> WriteData, bitset<1> readmem, bitset<1> writemem) 
-    {    
+    {  
+      //checks if it is mod 4 by checking if last two values are 0s
+      if ( Address[0] || Address[1]) {
+        return 0;
+      }  
+      //if readmem is true
+      if (readmem[0]) {
+        unsigned long add1 = Address.to_ulong();
+        unsigned long add2 = add1 + 3;
+        vector<bitset<8>> addSlice(DMem.begin() + add1, DMem.begin() + add2 + 1);
+
+        //print for verification
+        cout << add1 << "\n";
+        cout << add2 << "\n";
+        for (const auto& byte : addSlice) {
+        std::cout << byte << "\n";  // Outputs: 00000000, 10101010, etc.
+        }
+
+
+        unsigned long IntDataMem = (addSlice[0].to_ulong() << 24) | (addSlice[1].to_ulong() << 16) | (addSlice[2].to_ulong() << 8) | (addSlice[3].to_ulong());
+
+        cout << IntDataMem << "\n"; 
+        bitset<32>readdata(IntDataMem);
+
+        cout << readdata << "\n";
+
+      }
       /**
        * @brief Reads/writes data from/to the Data Memory.
        *
@@ -201,6 +225,7 @@ class DataMem
        * If readmem enabled, return the DMem read result as readdata.
        */
       // TODO: implement!
+
       return readdata;     
     }   
 
@@ -240,8 +265,9 @@ int main()
   {
     bitset<32> a(0);
     bitset<32> b(1);
-    myInsMem.ReadMemory(a);
-    myInsMem.ReadMemory(b);
+
+    myDataMem.MemoryAccess(b, 0, 1, 0);
+
 
     break;
     // Fetch: fetch an instruction from myInsMem.
