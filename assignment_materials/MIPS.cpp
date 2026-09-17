@@ -32,6 +32,7 @@ class RF
     void ReadWrite(bitset<5> RdReg1, bitset<5> RdReg2, bitset<5> WrtReg, bitset<32> WrtData, bitset<1> WrtEnable)
     {   
 
+      //r0 needs to always be 0 
       /**
        * @brief Reads or writes data from/to the Register.
        *
@@ -286,26 +287,36 @@ int main()
   while (1)  // TODO: implement!
   {
 
-    bitset<32> Address(4);
-    bitset<32> writeData(2870129782UL);
-    bitset<1> writeMem(1);
-    bitset<1> readMem(0);
+    // bitset<32> Address(4);
+    // bitset<32> writeData(2870129782UL);
+    // bitset<1> writeMem(1);
+    // bitset<1> readMem(0);
     
-    cout << "--- Before MemoryAccess ---" << endl;
-    cout << "writeData (Binary) : " << writeData << endl;
-    cout << "writeData (Decimal): " << writeData.to_ulong() << endl;
-    cout << "---------------------------" << endl;
+    // cout << "--- Before MemoryAccess ---" << endl;
+    // cout << "writeData (Binary) : " << writeData << endl;
+    // cout << "writeData (Decimal): " << writeData.to_ulong() << endl;
+    // cout << "---------------------------" << endl;
 
-    myDataMem.MemoryAccess(Address, writeData, readMem, writeMem);
+    // myDataMem.MemoryAccess(Address, writeData, readMem, writeMem);
 
 
     break;
     // Fetch: fetch an instruction from myInsMem.
     bitset<32> fetch_ins = myInsMem.ReadMemory(PC);
     // If current instruction is "11111111111111111111111111111111", then break; (exit the while loop)
+    //is this going to work - if it is a string
     if(fetch_ins == bitset<32>(string(32, '1'))) {
       break;
-    }
+    };
+    unsigned long int_ins = fetch_ins.to_ulong();
+    bitset<6> opcode(int_ins >> 26);
+    if (opcode == 0) {
+      
+    } else if (opcode == 2 || opcode == 3) {
+      //j instruction
+      } else {
+      //i instruction
+      }
     // decode(Read RF): get opcode and other signals from instruction, decode instruction
     
     // Execute: after decoding, ALU may run and return result
