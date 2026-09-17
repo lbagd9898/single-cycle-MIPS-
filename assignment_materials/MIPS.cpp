@@ -39,8 +39,15 @@ class RF
        * Put the read results to the ReadData1 and ReadData2.
        */
       // TODO: implement!
-
+      ReadData1 = Registers[RdReg1.to_ulong()];
+      ReadData2 = Registers[RdReg2.to_ulong()];
+      
+      if(WrtReg.to_ulong() != 0 && WrtEnable.test(0)) {
+        Registers[WrtReg.to_ulong()] = WrtData;
+      }
     }
+
+    
 
     void OutputRF()
     {
