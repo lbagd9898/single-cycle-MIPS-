@@ -271,11 +271,13 @@ int main()
 
     break;
     // Fetch: fetch an instruction from myInsMem.
-
+    bitset<32> fetch_ins = myInsMem.ReadMemory(PC);
     // If current instruction is "11111111111111111111111111111111", then break; (exit the while loop)
-
+    if(fetch_ins == bitset<32>(string(32, '1'))) {
+      break;
+    }
     // decode(Read RF): get opcode and other signals from instruction, decode instruction
-
+    
     // Execute: after decoding, ALU may run and return result
 
     // Read/Write Mem: access data memory (myDataMem)
