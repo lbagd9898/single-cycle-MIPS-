@@ -140,8 +140,8 @@ class INSMem
       //convert to integer
       unsigned long address = ReadAddress.to_ulong();
       //find vector indexes of 4 bytes
-      unsigned long index1 = address * 4;
-      unsigned long index2 = (address + 1) * 4 - 1;
+      unsigned long index1 = address;
+      unsigned long index2 = address + 3;
       //slice from index1 all the way through index2
       vector<bitset<8>> InstructionSlice(IMem.begin() + index1, IMem.begin() + index2 + 1);
 
@@ -303,6 +303,7 @@ int main()
     break;
     // Fetch: fetch an instruction from myInsMem.
     bitset<32> fetch_ins = myInsMem.ReadMemory(PC);
+
     // If current instruction is "11111111111111111111111111111111", then break; (exit the while loop)
     //is this going to work - if it is a string
     if(fetch_ins == bitset<32>(string(32, '1'))) {
@@ -310,12 +311,94 @@ int main()
     };
     unsigned long int_ins = fetch_ins.to_ulong();
     bitset<6> opcode(int_ins >> 26);
+
     if (opcode == 0) {
       
     } else if (opcode == 2 || opcode == 3) {
       //j instruction
       } else {
-      //i instruction
+      bitset<16> imm(int_ins & 0xFFFF);
+      bitset<5> rt((int_ins >> 16) & 0x1F);
+      bitset<5> rs((int_ins >> 21) & 0x1F);
+      //functionality for beq
+      if ( opcode == 4) {
+        unsigned long newPC;
+        myRF.ReadWrite(rs, rt, bitset<5>(0), bitset<32>(0), bitset<1>(0));
+        bitset<32> rs_data(myRF.ReadData1);
+        bitset<32> rt_data(myRF.ReadData2);
+        if (rs_data == rt_data) {
+          bool bit15 = imm[15];
+          bitset<32> signExtendedImm(0);
+          if (bit15) {
+            bitset<16> ones("1111111111111111");
+            signExtendedImm = ((ones.to_ulong() << 16) | imm.to_ulong()); 
+          } else {
+            bitset<16> zeros(0);
+            signExtendedImm = ((zeros.to_ulong() << 16) | imm.to_ulong());
+          };
+          newPC = PC.to_ulong() + 4 + (signExtendedImm.to_ulong() << 2);
+        } else {
+          newPC = PC.to_ulong() + 4;
+        };
+        PC = bitset<32>(newPC);
+        continue;
+        //next is opcode for addiu
+      } else if (opcode == 9) {
+        myRF.ReadWrite(rs, bitset<5>(0), bitset<5>(0), bitset<32>(0), bitset<1>(0));
+        bitset<32> rs_data(myRF.ReadData1);
+        //sign extension
+        bool bit15 = imm[15];
+        bitset<32> signExtendedImm(0);
+        if (bit15) {
+          bitset<16> ones("1111111111111111");
+          signExtendedImm = ((ones.to_ulong() << 16) | imm.to_ulong()); 
+        } else {
+          bitset<16> zeros(0);
+          signExtendedImm = ((zeros.to_ulong() << 16) | imm.to_ulong());
+        };
+        bitset<32> result(myALU.ALUOperation(bitset<3>(1), rs_data, signExtendedImm));
+        myRF.ReadWrite(rs, bitset<5>(0), rt, result, bitset<1>(1));
+        PC = bitset<32>(PC.to_ulong() + 4); 
+        continue;
+        //next is lw
+      } else if (opcode == 35) {
+        myRF.ReadWrite(rs, bitset<5>(0), bitset<5>(0), bitset<32>(0), bitset<1>(0));
+        bitset<32> rs_data(myRF.ReadData1);
+        //sign extension
+        bool bit15 = imm[15];
+        bitset<32> signExtendedImm(0);
+        if (bit15) {
+          bitset<16> ones("1111111111111111");
+          signExtendedImm = ((ones.to_ulong() << 16) | imm.to_ulong()); 
+        } else {
+          bitset<16> zeros(0);
+          signExtendedImm = ((zeros.to_ulong() << 16) | imm.to_ulong());
+        };
+        bitset<32> result(myALU.ALUOperation(bitset<3>(1), rs_data, signExtendedImm));
+        bitset<32> memData = myDataMem.MemoryAccess(result, bitset<32>(0), bitset<1>(1), bitset<1>(0)); 
+        myRF.ReadWrite(bitset<5>(0), bitset<5>(0), rt, memData, bitset<1>(1));
+        PC = bitset<32>(PC.to_ulong() + 4); 
+        continue;
+        //next is sw
+      } else if(opcode == 43) {
+        myRF.ReadWrite(rs, rt, bitset<5>(0), bitset<32>(0), bitset<1>(0));
+        bitset<32> rs_data(myRF.ReadData1);
+        bitset<32> rt_data(myRF.ReadData2);
+        bool bit15 = imm[15];
+        bitset<32> signExtendedImm(0);
+        if (bit15) {
+          bitset<16> ones("1111111111111111");
+          signExtendedImm = ((ones.to_ulong() << 16) | imm.to_ulong()); 
+        } else {
+          bitset<16> zeros(0);
+          signExtendedImm = ((zeros.to_ulong() << 16) | imm.to_ulong());
+        };
+        bitset<32> result(myALU.ALUOperation(bitset<3>(1), rs_data, signExtendedImm));
+        bitset<32> memData = myDataMem.MemoryAccess(result, bitset<32>(0), bitset<1>(1), bitset<1>(0));
+
+      }
+
+
       }
     // decode(Read RF): get opcode and other signals from instruction, decode instruction
     
