@@ -31,15 +31,6 @@ class RF
 
     void ReadWrite(bitset<5> RdReg1, bitset<5> RdReg2, bitset<5> WrtReg, bitset<32> WrtData, bitset<1> WrtEnable)
     {   
-
-      //r0 needs to always be 0 
-      /**
-       * @brief Reads or writes data from/to the Register.
-       *
-       * This function is used to read or write data from/to the register, depending on the value of WrtEnable.
-       * Put the read results to the ReadData1 and ReadData2.
-       */
-      // TODO: implement!
       ReadData1 = Registers[RdReg1.to_ulong()];
       ReadData2 = Registers[RdReg2.to_ulong()];
       
@@ -130,13 +121,6 @@ class INSMem
 
     bitset<32> ReadMemory (bitset<32> ReadAddress) 
     {    
-      // TODO: implement!
-      /**
-       * @brief Read Instruction Memory (IMem).
-       *
-       * Read the byte at the ReadAddress and the following three byte,
-       * and return the read result. 
-       */
       //convert to integer
       unsigned long address = ReadAddress.to_ulong();
       //find vector indexes of 4 bytes
@@ -144,13 +128,6 @@ class INSMem
       unsigned long index2 = address + 3;
       //slice from index1 all the way through index2
       vector<bitset<8>> InstructionSlice(IMem.begin() + index1, IMem.begin() + index2 + 1);
-
-      //print statements for testing
-      cout << index1 << "\n";
-      cout << index2 << "\n";
-      for (const auto& byte : InstructionSlice) {
-      std::cout << byte << "\n";  // Outputs: 00000000, 10101010, etc.
-      }
 
       unsigned long IntInstruction = (InstructionSlice[0].to_ulong() << 24) | (InstructionSlice[1].to_ulong() << 16) | (InstructionSlice[2].to_ulong() << 8) | (InstructionSlice[3].to_ulong());
 
@@ -202,21 +179,12 @@ class DataMem
       if (readmem[0]) {
         vector<bitset<8>> addSlice(DMem.begin() + add1, DMem.begin() + add2 + 1);
 
-        //print for verification
-        cout << add1 << "\n";
-        cout << add2 << "\n";
-        for (const auto& byte : addSlice) {
-        std::cout << byte << "\n"; 
-
-         // Outputs: 00000000, 10101010, etc.
-        }
-
         unsigned long IntDataMem = (addSlice[0].to_ulong() << 24) | (addSlice[1].to_ulong() << 16) | (addSlice[2].to_ulong() << 8) | (addSlice[3].to_ulong());
 
-        cout << IntDataMem << "\n"; 
-        bitset<32>readdata(IntDataMem);
+        // cout << IntDataMem << "\n"; 
+        readdata = bitset<32>(IntDataMem);
 
-        cout << readdata << "\n";
+        // cout << readdata << "\n";
 
       }
       if (writemem[0]) {
@@ -229,25 +197,9 @@ class DataMem
             shift -= 8;
         }
 
-        // --- PRINT DMEM TO VERIFY UPDATES ---
-        std::cout << "--- Updated DMem ---" << std::endl;
-        for (size_t i = 0; i < 16; i++) {
-            std::cout << "DMem[" << i << "]: " << DMem[i] << std::endl;
-        }
-        std::cout << "--------------------" << std::endl;
-
 
         return 1;
     }
-      /**
-       * @brief Reads/writes data from/to the Data Memory.
-       *
-       * This function is used to read/write data from/to the DataMem, depending on the readmem and writemem.
-       * First, if writemem enabled, WriteData should be written to DMem, clear or ignore the return value readdata,
-       * and note that 32-bit WriteData will occupy 4 continious Bytes in DMem. 
-       * If readmem enabled, return the DMem read result as readdata.
-       */
-      // TODO: implement!
 
       return readdata;     
     }   
@@ -260,12 +212,13 @@ class DataMem
       {
         for (int j = 0; j< 1000; j++)
         {     
-          dmemout << DMem[j]<<endl;
+          dmemout << DMem[j] <<endl;
         }
 
       }
       else cout<<"Unable to open file";
       dmemout.close();
+      cout << "DMEM file updated" << "\n";
 
     }             
 
@@ -286,24 +239,8 @@ int main()
 
   while (1)  // TODO: implement!
   {
-
-    // bitset<32> Address(4);
-    // bitset<32> writeData(2870129782UL);
-    // bitset<1> writeMem(1);
-    // bitset<1> readMem(0);
-    
-    // cout << "--- Before MemoryAccess ---" << endl;
-    // cout << "writeData (Binary) : " << writeData << endl;
-    // cout << "writeData (Decimal): " << writeData.to_ulong() << endl;
-    // cout << "---------------------------" << endl;
-
-    // myDataMem.MemoryAccess(Address, writeData, readMem, writeMem);
-
-
-    break;
     // Fetch: fetch an instruction from myInsMem.
     bitset<32> fetch_ins = myInsMem.ReadMemory(PC);
-
     // If current instruction is "11111111111111111111111111111111", then break; (exit the while loop)
     //is this going to work - if it is a string
     if(fetch_ins == bitset<32>(string(32, '1'))) {
@@ -312,14 +249,51 @@ int main()
     unsigned long int_ins = fetch_ins.to_ulong();
     bitset<6> opcode(int_ins >> 26);
 
+
+    //take diff parts of the instruciton
+    bitset<6> funct(int_ins & 0x3F);
+    bitset<5> rs((int_ins >> 21) & 0x1F);
+    bitset<5> rt((int_ins >> 16) & 0x1F);
+    bitset<5> rd((int_ins >> 11) & 0x1F);
+
+    //j type to stop
+    if (opcode == 63) {
+      break;
+    }
+
+    //r type instructions
     if (opcode == 0) {
-      
-    } else if (opcode == 2 || opcode == 3) {
+      myRF.ReadWrite(rs, rt, bitset<5>(0), bitset<32>(0), bitset<1>(0));
+      bitset<32> fetch_data = myRF.ReadData1;
+      bitset<32> fetch_data2 = myRF.ReadData2;
+      bitset<3> ALUOp(0);
+      unsigned long int_op = funct.to_ulong();
+      if (int_op == 0x21) { 
+        ALUOp = bitset<3>(ADDU);
+      }
+      if (int_op == 0x23) {
+        ALUOp = bitset<3>(SUBU);
+      }
+      if(int_op == 0x24) {
+        ALUOp = bitset<3>(AND);
+      }
+      if(int_op == 0x25) {
+        ALUOp = bitset<3>(OR);
+      }
+      if(int_op == 0x27) {
+        ALUOp = bitset<3>(NOR);
+      }
+      bitset<32> alu_val = myALU.ALUOperation(ALUOp, fetch_data, fetch_data2);
+      myRF.ReadWrite(rs, rt, rd, alu_val, bitset<1>(1));
+      PC = bitset<32>(PC.to_ulong() + 4);
+    } else if (opcode == 2) {
       //j instruction
+      unsigned long j_add = int_ins & 0x3FFFFFF;
+      unsigned long pc_plus4 = PC.to_ulong() + 4;
+      unsigned long new_pc = (pc_plus4 & 0xF0000000) | (j_add << 2);
+      PC = bitset<32>(new_pc);
       } else {
       bitset<16> imm(int_ins & 0xFFFF);
-      bitset<5> rt((int_ins >> 16) & 0x1F);
-      bitset<5> rs((int_ins >> 21) & 0x1F);
       //functionality for beq
       if ( opcode == 4) {
         unsigned long newPC;
@@ -341,7 +315,6 @@ int main()
           newPC = PC.to_ulong() + 4;
         };
         PC = bitset<32>(newPC);
-        continue;
         //next is opcode for addiu
       } else if (opcode == 9) {
         myRF.ReadWrite(rs, bitset<5>(0), bitset<5>(0), bitset<32>(0), bitset<1>(0));
@@ -359,7 +332,6 @@ int main()
         bitset<32> result(myALU.ALUOperation(bitset<3>(1), rs_data, signExtendedImm));
         myRF.ReadWrite(rs, bitset<5>(0), rt, result, bitset<1>(1));
         PC = bitset<32>(PC.to_ulong() + 4); 
-        continue;
         //next is lw
       } else if (opcode == 35) {
         myRF.ReadWrite(rs, bitset<5>(0), bitset<5>(0), bitset<32>(0), bitset<1>(0));
@@ -378,7 +350,6 @@ int main()
         bitset<32> memData = myDataMem.MemoryAccess(result, bitset<32>(0), bitset<1>(1), bitset<1>(0)); 
         myRF.ReadWrite(bitset<5>(0), bitset<5>(0), rt, memData, bitset<1>(1));
         PC = bitset<32>(PC.to_ulong() + 4); 
-        continue;
         //next is sw
       } else if(opcode == 43) {
         myRF.ReadWrite(rs, rt, bitset<5>(0), bitset<32>(0), bitset<1>(0));
@@ -394,24 +365,10 @@ int main()
           signExtendedImm = ((zeros.to_ulong() << 16) | imm.to_ulong());
         };
         bitset<32> result(myALU.ALUOperation(bitset<3>(1), rs_data, signExtendedImm));
-        bitset<32> memData = myDataMem.MemoryAccess(result, bitset<32>(0), bitset<1>(1), bitset<1>(0));
-
+        bitset<32> memData = myDataMem.MemoryAccess(result, rt_data, bitset<1>(0), bitset<1>(1));
+        PC = bitset<32>(PC.to_ulong() + 4); 
       }
-
-
       }
-    // decode(Read RF): get opcode and other signals from instruction, decode instruction
-    
-    // Execute: after decoding, ALU may run and return result
-
-    // Read/Write Mem: access data memory (myDataMem)
-
-    // Write back to RF: some operations may write things to RF
-
-    // Update PC
-
-
-    /**** You don't need to modify the following lines. ****/
 
     myRF.OutputRF(); // dump RF;    
   }
