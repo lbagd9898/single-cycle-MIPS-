@@ -87,8 +87,6 @@ class ALU
         ALUresult = oprand1 | oprand2;
       }  else if  (ALUOP == 7) {
         ALUresult = ~(oprand1 | oprand2);    
-      } else {
-        cout << "Warning: Invalid opcode" << ALUOP.to_ulong() <<"\n";
       }
       return ALUresult;
     }            
@@ -181,10 +179,7 @@ class DataMem
 
         unsigned long IntDataMem = (addSlice[0].to_ulong() << 24) | (addSlice[1].to_ulong() << 16) | (addSlice[2].to_ulong() << 8) | (addSlice[3].to_ulong());
 
-        // cout << IntDataMem << "\n"; 
         readdata = bitset<32>(IntDataMem);
-
-        // cout << readdata << "\n";
 
       }
       if (writemem[0]) {
@@ -192,8 +187,8 @@ class DataMem
         
 
         for (int i = add1; i <= add2; i++) {
-            // Explicitly convert shifted bitset to 8 bits
-            DMem[i] = std::bitset<8>((WriteData >> shift).to_ulong());
+            // convert shifted bitset to 8 bits
+            DMem[i] = bitset<8>((WriteData >> shift).to_ulong());
             shift -= 8;
         }
 
@@ -352,9 +347,11 @@ int main()
         PC = bitset<32>(PC.to_ulong() + 4); 
         //next is sw
       } else if(opcode == 43) {
+        //get register data
         myRF.ReadWrite(rs, rt, bitset<5>(0), bitset<32>(0), bitset<1>(0));
         bitset<32> rs_data(myRF.ReadData1);
         bitset<32> rt_data(myRF.ReadData2);
+        //sign extension
         bool bit15 = imm[15];
         bitset<32> signExtendedImm(0);
         if (bit15) {
@@ -364,7 +361,9 @@ int main()
           bitset<16> zeros(0);
           signExtendedImm = ((zeros.to_ulong() << 16) | imm.to_ulong());
         };
+        // add rs to sign extended imm
         bitset<32> result(myALU.ALUOperation(bitset<3>(1), rs_data, signExtendedImm));
+        //store result with rt address
         bitset<32> memData = myDataMem.MemoryAccess(result, rt_data, bitset<1>(0), bitset<1>(1));
         PC = bitset<32>(PC.to_ulong() + 4); 
       }
